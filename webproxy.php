@@ -3,13 +3,13 @@
 //ini_set('display_errors'        , 1);
 //ini_set('display_startup_errors', 1);
 
-$link = $_SERVER["QUERY_STRING"];
+$link = urldecode($_SERVER["QUERY_STRING"]);
 $nocache        = 0;                 // Флаг запрета использования кэша
-$cacheDir       = 'mycache';         // Название каталога для файлов кеша
+$cacheDir       = 'cache_proxy';     // Название каталога для файлов кеша
 $cacheLifetime  = 4 * 60 * 60;       // Время жизни кеш файла в секундах
 $cacheSizeLimit = 400 * 1024 * 1024; // Максимальный размер папки кэша (первое число - мегабайты)
 
-if (!$link) { header("Location: /stepashka.php"); exit; }
+//if (!$link) { header("Location: /stepashka.php"); exit; }
 
 // Проверяем каталог кеша, если нужно - создаём
 if (!file_exists($cacheDir)) if (@mkdir($cacheDir, 0755, true)) @chmod($dirName, 0755);
@@ -31,15 +31,11 @@ function GetPage($link) {
     }
   }
   if ($output=='') {  
+    $headers = parseRequestHeaders();
     $ch = curl_init($link);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); 
     curl_setopt($ch, CURLOPT_ENCODING      , "");
-    curl_setopt($ch, CURLOPT_HTTPHEADER    , array(
-      'Accept-Encoding: gzip, deflate',
-      'Accept-Charset: utf-8;',
-      'User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:13.0) Gecko/20100101 Firefox/13.0',
-      'Connection: Keep-Alive',
-      'Accept-Language: ru-RU,ru;q=0.9,en;q=0.8'));
+    curl_setopt($ch, CURLOPT_HTTPHEADER    , $headers);
     $output = curl_exec($ch);
     if (curl_getinfo($ch, CURLINFO_HTTP_CODE)==200)
       file_put_contents($cacheFile, gzcompress($output)); // Сохраняем только удачные запросы
@@ -91,4 +87,15 @@ function dirsize($d, &$aFiles) {
   }
   closedir($dh);
   return $size;
+}
+// -------------------------------------------------------------------------------------------
+function parseRequestHeaders() {
+    $headers = array();
+    foreach($_SERVER as $key => $value) {
+        if (substr($key, 0, 5) <> 'HTTP_') continue;
+        $header = str_replace(' ', '-', ucwords(str_replace('_', ' ', strtolower(substr($key, 5)))));
+        if ($header=="Host") continue;
+        $headers[] = $header . ": " . $value;
+    }
+    return $headers;
 }

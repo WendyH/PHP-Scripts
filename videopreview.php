@@ -2,7 +2,7 @@
 ini_set("log_errors", 1); ini_set("error_log", $_SERVER['SCRIPT_FILENAME'].".log"); ini_set('error_reporting', E_ALL); ini_set("display_errors", 0);
 set_time_limit(30);
 $outImgDir      = 'img_preview';     // Каталог сохранения созданных изображений (cache)
-$cacheSizeLimit = 200 * 1024 * 1024; // Максимальный размер папки кэша (первое число - мегабайты)
+$cacheSizeLimit = 4000 * 1024 * 1024; // Максимальный размер папки кэша (первое число - мегабайты)
 $fontDir        = './ttf';
 $backgroundDir  = './backgrounds';
 $notEnd  = false;
@@ -200,7 +200,20 @@ if (!$bDontSaveCache) touch($image_file);
   if ($urlPic) {
     $thumbName = $image_file.".thumb.jpg";              // Формируем имя временного файла постера
     if (file_exists($thumbName)) $urlPic = $thumbName;  // Если такой есть локально, то зачем качать из интернета?
-    $thumbContent = file_get_contents($urlPic);         // Получаем содержимое постера
+
+      $opts = array(
+        'http'=>array(
+        'method'=>"GET",
+          'header'=>
+            "Accept: image/webp,*/*;q=0.8\r\n" .
+            "User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/40.0.2214.111 Safari/537.36\r\n" .
+            "Referer: $urlPic\r\n" .
+            "Accept-Language: ru-RU,ru;q=0.8,en-US;q=0.6,en;q=0.4\r\n"
+        )
+      );
+
+    $context = stream_context_create($opts);
+    $thumbContent = file_get_contents($urlPic, false, $context);         // Получаем содержимое постера
     if ($thumbContent) {
       if ($urlPic <> $thumbName) file_put_contents($thumbName, $thumbContent); // Если небыл сохранён локально - сохраняем
       $imPoster = new Imagick($thumbName); // Создаём картинку с помощью ImageMagick из сохранённого локально файла
@@ -210,6 +223,7 @@ if (!$bDontSaveCache) touch($image_file);
       $hPic = $imPoster->getImageHeight(); // 
       unlink($thumbName); // Удаляем сохранённую картинку (зачем она, когда у нас будет готовый кеш?)
     }
+    $thumbContent = "";
   }
 try {
   // Создаём картинку с помощью ImageMagick из файла фона ($background)
@@ -493,7 +507,7 @@ function CheckCacheSizeLimit() {
       $cacheSize += $info[2]; // Подсчитываем размер кеша прибавляя размер файла
       if ($cacheSize > $cacheSizeLimit) {
         $cacheSize -= $info[2]; // Если превышение лимита - удаляем файл
-        unlink($info[0]);
+        if (file_exists($info[0])) unlink($info[0]);
       }
     }
   }
