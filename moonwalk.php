@@ -49,7 +49,7 @@ if ($data) {
 }
 
 // Получаем параметры POST запроса из js-скрипта
-$data = GetRegexValue($jsData, "#var e=(\{mw_key.*?\})#is");
+$data = GetRegexValue($jsData, "#var\s+\w+=(\{mw_key.*?\})#is");
 if (!$data) die("POST parameters not found in loaded js.");
 
 // Формируем данные для POST
@@ -59,6 +59,10 @@ foreach ($postData as $key => $value) {
   $var = GetRegexValue($val, "#this.options.(\w+)#");
   $tmp = GetRegexValue($val, "#(this.options.\w+)#");
   if ($var) $val = str_replace($tmp, $options[$var], $val);
+  $var = GetRegexValue($val, "#\w+\.(\w+)#");
+  if ($var && preg_match("#window\.".$var."\s*=\s*['\"](.*?)['\"]#", $page, $matches)) {
+    $val = $matches[1];
+  }
   $post .= $key . "=" . $val . "&";
 }
 
@@ -97,12 +101,12 @@ echo $data;
 ///////////////////////////////////////////////////////////////////////////////
 // Получение страницы с указанными методом и заголовками
 function LoadPage($url, $method, $headers, $data='') {
-	global $cookies;
+    global $cookies;
 
-	// Если есть кукисы - добавляем их значения в HTTP заголовки
-	$coo = "";
+    // Если есть кукисы - добавляем их значения в HTTP заголовки
+    $coo = "";
     foreach($cookies as $key => $val) $coo .= $key."=".urlencode($val)."; ";
-	if ($coo) $headers .= "Cookie: $coo\r\n";
+    if ($coo) $headers .= "Cookie: $coo\r\n";
 
     $options = array();
     $options['http'] = array('method' => $method ,
@@ -126,7 +130,7 @@ function LoadPage($url, $method, $headers, $data='') {
 // Функция получения значения по указанному регулярному выражению
 function GetRegexValue($text, $pattern, $group=1) {
     if (preg_match($pattern, $text, $matches))
-      return $matches[$group];
+        return $matches[$group];
     return "";
 }
 
@@ -137,9 +141,9 @@ function JSDecode($data) {
   $data = str_replace("'),", "',", $data);
   $data = str_replace("'", "\""  , $data); // Заменяем одинарные кавычки на кранированные обычные
   $data = str_replace(["\n","\r"], "", $data);                    // Убираем переносы строк
-  $data = preg_replace('/:(this.options.\w+)/',':"$1"', $data);   // Берём в кавычки значения this.options...
   $data = preg_replace('/([^\w"\.])(\w+)\s*:/','$1"$2":', $data); // Берём в кавычки имена
-  $data = preg_replace('/(,\s*)(})/','$2', $data);                // Убираем лишние пробелы
+  $data = preg_replace('/("\w+")\s*:\s*([\w\.]+)/' ,'$1:"$2"', $data); // Берём в кавычки все значения
+  $data = preg_replace('/(,\s*)(})/','$2', $data);                     // Убираем лишние пробелы
   $json = json_decode($data, true);
   return $json;
 }
