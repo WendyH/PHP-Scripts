@@ -65,6 +65,10 @@ foreach ($postData as $key => $value) {
   }
   $post .= $key . "=" . $val . "&";
 }
+// Get global variable
+if (preg_match("#window\['(\w+)'\]\s*=\s*'(\w+)'#", $page, $m1))
+  if (preg_match("#\w+\.(\w+)\s*=\s*\w+\[[\"']".$m1[1]."#", $jsData, $m2))
+    $post .= $m2[1] . "=" . $m1[2];
 
 $link = $urlBase . "/manifests/video/" . $options["video_token"] . "/all";
 
@@ -139,7 +143,7 @@ function GetRegexValue($text, $pattern, $group=1) {
 function JSDecode($data) {
   $data = str_replace("encodeURIComponent(", "", $data); // Убираем левые js команды
   $data = str_replace("'),", "',", $data);
-  $data = str_replace("'", "\""  , $data); // Заменяем одинарные кавычки на кранированные обычные
+  $data = str_replace("'", "\""  , $data); // Заменяем одинарные кавычки на экранированные обычные
   $data = str_replace(["\n","\r"], "", $data);                    // Убираем переносы строк
   $data = preg_replace('/([^\w"\.])(\w+)\s*:/','$1"$2":', $data); // Берём в кавычки имена
   $data = preg_replace('/("\w+")\s*:\s*([\w\.]+)/' ,'$1:"$2"', $data); // Берём в кавычки все значения
