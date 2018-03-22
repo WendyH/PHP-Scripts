@@ -63,11 +63,12 @@ foreach ($postData as $key => $value) {
   if ($var && preg_match("#window\.".$var."\s*=\s*['\"](.*?)['\"]#", $page, $matches)) {
     $val = $matches[1];
   }
+  if ($val=="e._mw_adb") $val="false";
   $post .= $key . "=" . $val . "&";
 }
 // Get global variable
 if (preg_match("#window\['(\w+)'\]\s*=\s*'(\w+)'#", $page, $m1))
-  if (preg_match("#\w+\.(\w+)\s*=\s*\w+\[[\"']".$m1[1]."#", $jsData, $m2))
+  if (preg_match('#n\["(\w+)"\]\s*=\s*\w+\["'.$m1[1].'#', $jsData, $m2))
     $post .= $m2[1] . "=" . $m1[2];
 
 $link = $urlBase . "/manifests/video/" . $options["video_token"] . "/all";
