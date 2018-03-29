@@ -4,7 +4,7 @@ $urlBase = "http://moonwalk.cc";
 
 // Получение ссылки на видео c moonwalk в переданных параметрах, а также тип получаемого потока.
 $url     = isset($_REQUEST['url'    ]) ? $_REQUEST['url' ] : ""    ; // moonwalk.cc iframe url
-$type    = isset($_REQUEST['type'   ]) ? $_REQUEST['type'] : "m3u8"; // tyle of link (f4m, m3u8, dash)
+$type    = isset($_REQUEST['type'   ]) ? $_REQUEST['type'] : "m3u8"; // tyle of link (m3u8, mp4)
 $urlonly = isset($_REQUEST['urlonly']); // Флаг, сигнализирующий отдавать ссылку на плейлист, а не само его содержимое
 $attacha = isset($_REQUEST['at'     ]); // Флаг, сигнализирующий отдавать плейлист как прикреплённый файл с расширением
 
@@ -12,11 +12,13 @@ if (!$url) die("No moonwalk iframe url in the parameters.");
 
 $cookies = array();
 
+$userAgent = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36";
+
 // Установка HTTP заголовков
 $headers = "Accept-Encoding: gzip, deflate\r\n" .
            "Content-Type: application/x-www-form-urlencoded; charset=UTF-8\r\n" .
            "Referer: " . $url . "\r\n" .
-           "User-Agent: Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36\r\n";
+           "User-Agent: $userAgent\r\n";
 
 // Загружаем страницу iframe c moonwalk
 $page = LoadPage($url, "GET", $headers);
@@ -36,50 +38,47 @@ if (!$jsUrl)  die("Not found js url in the loaded iframe.");
 
 $jsData = LoadPage($urlBase . $jsUrl, "GET", $headers);
 
-// Устанавливаем дополнительные заголовки и их значения
-$data = GetRegexValue($jsData, "#headers:({.*?})#is");
-if ($data) {
-  $headersArr = JSDecode($data);
-  foreach ($headersArr as $key => $value) {
-    $val = $value;
-    $var = GetRegexValue($val, "#this.options.(\w+)#");
-    if ($var) $val = $options[$var];
-    $headers .= $key . ": " . $val . "\r\n";
-  }
-}
-
 // Получаем параметры POST запроса из js-скрипта
-$data = GetRegexValue($jsData, "#var\s+\w+=(\{mw_key.*?\})#is");
-if (!$data) die("POST parameters not found in loaded js.");
+$data = GetRegexValue($jsData, "#getVideoManifests.*?\{(.*?\}\);)#is");
+if (!$data) die("Function getVideoManifests not found in loaded js.");
+
+$JSONParams = GetRegexValue($data, "#t\s*=\s*({.*?})#is");
+if (!$JSONParams) die("Not found json data in getVideoManifests function.");
+
+// Приводим к одному виду ссылки на переменные, присвоенные объетку window
+// window["7268338cb2fefca17ebbd2be216fd1de"] -> window.7268338cb2fefca17ebbd2be216fd1de
+// чтобы отработала правильно функция JSDecode 
+$JSONParams = preg_replace_callback("#window\[['\"](.*?)['\"]\]#", function($m) { return "window.".$m[1]; }, $JSONParams);
 
 // Формируем данные для POST
-$postData = JSDecode($data); $post = "";
-foreach ($postData as $key => $value) {
+$postData = JSDecode($JSONParams); $data4Encrypt = "{";
+// В цикле перебираем все ключи и значения и формируем json строку
+// заменяя все переменные на их значения
+foreach ($postData as $name => $value) {
   $val = $value;
-  $var = GetRegexValue($val, "#this.options.(\w+)#");
-  $tmp = GetRegexValue($val, "#(this.options.\w+)#");
-  if ($var) $val = str_replace($tmp, $options[$var], $val);
-  $var = GetRegexValue($val, "#\w+\.(\w+)#");
-  if ($var && preg_match("#window\.".$var."\s*=\s*['\"](.*?)['\"]#", $page, $matches)) {
-    $val = $matches[1];
+  if ($val=="navigator.userAgent")    $val = $userAgent;
+  else if (strpos($val, "_mw_adb")>0) $val = "true";
+  else if (preg_match("#this.options.(\w+)#", $val, $m)) $val = $options[$m[1]];
+  else if (preg_match("#window.(\w+)#", $val, $m)) {
+    // Если указана переменная со ссылкой на объект window - пытаемся найти значение в загрузенном html
+  	if (preg_match("#window\[['\"]".$m[1]."['\"]]\s*=\s*['\"](.*?)['\"]#", $page  , $matches)) $val = $matches[1];
+  	if (preg_match("#window\.".$m[1]."\s*=\s*['\"](.*?)['\"]#"           , $page  , $matches)) $val = $matches[1];
+  	if (preg_match("#['\"]".$m[1]."['\"]]\s*=\s*['\"](.*?)['\"]#"        , $jsData, $matches)) $val = $matches[1]; // Если нашли в js, то берём оттуда
   }
-  if ($val=="e._mw_adb") $val="false";
-  $post .= $key . "=" . $val . "&";
+  if (!is_numeric($val) && $val!="true" && $val!="false") $val = '"'.$val.'"'; // Если значение не число - обрамляем кавычками
+  if ($data4Encrypt != "{") $data4Encrypt .= ","; // Если это не первая пара - добавляем запятую
+  $data4Encrypt .= '"'.$name.'":'.$val;           // Добавляем пару "имя":значение
 }
-// Get global variable
-if (preg_match("#window\['(\w+)'\]\s*=\s*'(\w+)'#", $page, $m1)) {
-  if (preg_match('#n\["(\w+)"\]\s*=\s*\w+\["'.$m1[1].'#', $jsData, $m2))
-    $post .= $m2[1] . "=" . $m1[2] . "&";
-  if (preg_match('#n\.(\w+)\s*=\s*\w+\["'.$m1[1].'#', $jsData, $m2))
-    $post .= $m2[1] . "=" . $m1[2] . "&";
-}
-if (preg_match('#getVideoManifests.*?n\.(\w+)\s*=\s*"(.*?)"#', $jsData, $m2))
-  $post .= $m2[1] . "=" . $m2[2] . "&";
+$data4Encrypt .= "}"; // Закончили формировать json данные для шифрования
 
-$link = $urlBase . "/manifests/video/" . $options["video_token"] . "/all";
+$iv  = GetRegexValue($data, "#\bn=['\"](.*?)['\"]#");
+$key = GetRegexValue($data, "#\be=['\"](.*?)['\"]#");
+
+// Шифруем AES cbc PKCS7 Padding
+$crypted = openssl_encrypt($data4Encrypt, 'AES-256-CBC', hex2bin($key), 0, hex2bin($iv));
 
 // Делаем POST запрос и получаем список ссылок на потоки
-$data = LoadPage($link, "POST", $headers, $post);
+$data = LoadPage($urlBase . "/vs", "POST", $headers, "q=".urlencode($crypted));
 
 if ($type=="json") die($data);
 
@@ -88,7 +87,8 @@ $answerObject = json_decode($data, TRUE);
 
 // Получаем значение ссылки нужного типа потока (по-умолчанию: m3u8)
 $link = "";
-if (isset($answerObject["mans"])) $link = $answerObject["mans"]["manifest_".$type];
+if (isset($answerObject["mp4" ]) && $type=="mp4") $link = $answerObject["mp4" ];
+if (isset($answerObject["m3u8"]) && $link==""   ) $link = $answerObject["m3u8"];
 
 // Если ссылка с таким типом есть, получаем содержимое плейлиста/манифеста
 if ($link) {
@@ -136,7 +136,7 @@ function LoadPage($url, $method, $headers, $data='') {
     return $page;
 }
 
-////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 // Функция получения значения по указанному регулярному выражению
 function GetRegexValue($text, $pattern, $group=1) {
     if (preg_match($pattern, $text, $matches))
