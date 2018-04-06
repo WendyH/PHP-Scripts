@@ -57,7 +57,7 @@ $postData = JSDecode($JSONParams); $data4Encrypt = "{";
 foreach ($postData as $name => $value) {
   $val = $value;
   if ($val=="navigator.userAgent")    $val = $userAgent;
-  else if (strpos($val, "_mw_adb")>0) $val = "true";
+  else if (strpos($val, "_mw_adb")>0) $val = "false";
   else if (preg_match("#this.options.(\w+)#", $val, $m)) $val = $options[$m[1]];
   else if (preg_match("#window.(\w+)#", $val, $m)) {
     // Если указана переменная со ссылкой на объект window - пытаемся найти значение в загрузенном html
