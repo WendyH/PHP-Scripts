@@ -73,9 +73,10 @@ $data4Encrypt .= "}"; // Закончили формировать json данн
 
 $iv  = GetRegexValue($data, "#\bn=['\"](.*?)['\"]#");
 $key = GetRegexValue($data, "#\be=['\"](.*?)['\"]#");
+$iv  = "e080ee12a6b39ad18309bc89d5097b77"; // snx 2 spell
 
 // Шифруем AES cbc PKCS7 Padding
-$crypted = openssl_encrypt($data4Encrypt, 'AES-256-CBC', hex2bin($key), 0, hex2bin($iv));
+$crypted = openssl_encrypt($data4Encrypt, 'AES-256-CBC', hex2bin("7316d0c4".$key), 0, hex2bin($iv));
 
 // Делаем POST запрос и получаем список ссылок на потоки
 $data = LoadPage($urlBase . "/vs", "POST", $headers, "q=".urlencode($crypted));
