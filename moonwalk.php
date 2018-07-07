@@ -71,9 +71,8 @@ foreach ($postData as $name => $value) {
 }
 $data4Encrypt .= "}"; // Закончили формировать json данные для шифрования
 
-$iv  = GetRegexValue($data, "#\bn=['\"](.*?)['\"]#");
+$iv  = GetRegexValue($data, "#\br=['\"](.*?)['\"]#"); // snx 2 spell
 $key = GetRegexValue($data, "#\be=['\"](.*?)['\"]#");
-$iv  = "e080ee12a6b39ad18309bc89d5097b77"; // snx 2 spell
 
 // Шифруем AES cbc PKCS7 Padding
 $crypted = openssl_encrypt($data4Encrypt, 'AES-256-CBC', hex2bin("7316d0c4".$key), 0, hex2bin($iv));
