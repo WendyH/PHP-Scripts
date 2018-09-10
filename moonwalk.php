@@ -38,44 +38,30 @@ if (!$jsUrl)  die("Not found js url in the loaded iframe.");
 
 $jsData = LoadPage($urlBase . $jsUrl, "GET", $headers);
 
-// Получаем параметры POST запроса из js-скрипта
-$data = GetRegexValue($jsData, "#getVideoManifests.*?\{(.*?\}\);)#is");
-if (!$data) die("Function getVideoManifests not found in loaded js.");
+// Формируем параметры для POST запроса
+$postData = array();
+$postData["a"] = (int)$options["partner_id"];
+$postData["b"] = (int)$options["domain_id"];
+$postData["c"] = false;
+$postData["e"] = $options["video_token"];
+$postData["f"] = $userAgent;
 
-$JSONParams = GetRegexValue($data, "#t\s*=\s*({.*?})#is");
-if (!$JSONParams) die("Not found json data in getVideoManifests function.");
+$data4Encrypt = json_encode($postData, JSON_UNESCAPED_SLASHES);
 
-// Приводим к одному виду ссылки на переменные, присвоенные объетку window
-// window["7268338cb2fefca17ebbd2be216fd1de"] -> window.7268338cb2fefca17ebbd2be216fd1de
-// чтобы отработала правильно функция JSDecode 
-$JSONParams = preg_replace_callback("#window\[['\"](.*?)['\"]\]#", function($m) { return "window.".$m[1]; }, $JSONParams);
+// Шифруем
+$key1 = GetRegexValue($jsData, '#;e\.a[0-9a-z]+="([^"]+)",#is');
+$key2 = GetRegexValue($jsData, '#,e\.d[0-9a-z]+="([^"]+)",#is');
+$key3 = GetRegexValue($jsData, '#,e\.e[0-9a-z]+="([^"]+)",#is');
+$key4 = GetRegexValue($jsData, '#,e\.t[0-9a-z]+="([^"]+)",#is');
+$key5 = GetRegexValue($jsData, '#,e\.j[0-9a-z]+="([^"]+)",#is');
+$key6 = GetRegexValue($jsData, '#,e\.f[0-9a-z]+="([^"]+)",#is');
+$key7 = GetRegexValue($jsData, '#,e\.n[0-9a-z]+="([^"]+)",#is');
 
-// Формируем данные для POST
-$postData = JSDecode($JSONParams); $data4Encrypt = "{";
-// В цикле перебираем все ключи и значения и формируем json строку
-// заменяя все переменные на их значения
-foreach ($postData as $name => $value) {
-  $val = $value;
-  if ($val=="navigator.userAgent")    $val = $userAgent;
-  else if (strpos($val, "_mw_adb")>0) $val = "false";
-  else if (preg_match("#this.options.(\w+)#", $val, $m)) $val = $options[$m[1]];
-  else if (preg_match("#window.(\w+)#", $val, $m)) {
-    // Если указана переменная со ссылкой на объект window - пытаемся найти значение в загрузенном html
-  	if (preg_match("#window\[['\"]".$m[1]."['\"]]\s*=\s*['\"](.*?)['\"]#", $page  , $matches)) $val = $matches[1];
-  	if (preg_match("#window\.".$m[1]."\s*=\s*['\"](.*?)['\"]#"           , $page  , $matches)) $val = $matches[1];
-  	if (preg_match("#['\"]".$m[1]."['\"]]\s*=\s*['\"](.*?)['\"]#"        , $jsData, $matches)) $val = $matches[1]; // Если нашли в js, то берём оттуда
-  }
-  if (!is_numeric($val) && $val!="true" && $val!="false") $val = '"'.$val.'"'; // Если значение не число - обрамляем кавычками
-  if ($data4Encrypt != "{") $data4Encrypt .= ","; // Если это не первая пара - добавляем запятую
-  $data4Encrypt .= '"'.$name.'":'.$val;           // Добавляем пару "имя":значение
-}
-$data4Encrypt .= "}"; // Закончили формировать json данные для шифрования
-
-$iv  = GetRegexValue($data, "#\br=['\"](.*?)['\"]#"); // snx 2 spell
-$key = GetRegexValue($data, "#\be=['\"](.*?)['\"]#");
+$iv  = "79e4add175162a762071a11fe45d249f";
+$key = $key1.$key2.$key3.$key4.$key5.$key6.$key7;
 
 // Шифруем AES cbc PKCS7 Padding
-$crypted = openssl_encrypt($data4Encrypt, 'AES-256-CBC', hex2bin("7316d0c4".$key), 0, hex2bin($iv));
+$crypted = openssl_encrypt($data4Encrypt, 'AES-256-CBC', hex2bin($key), 0, hex2bin($iv));
 
 // Делаем POST запрос и получаем список ссылок на потоки
 $data = LoadPage($urlBase . "/vs", "POST", $headers, "q=".urlencode($crypted));
