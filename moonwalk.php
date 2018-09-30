@@ -12,10 +12,10 @@ if (!$url) die("No moonwalk iframe url in the parameters.");
 
 $cookies = array();
 
-$userAgent = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36";
+$userAgent = "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Safari/537.36";
 
 // Установка HTTP заголовков
-$headers = "Accept-Encoding: gzip, deflate\r\n" .
+$headers = "Accept-Encoding: gzip, deflate, br\r\n" .
            "Content-Type: application/x-www-form-urlencoded; charset=UTF-8\r\n" .
            "Referer: " . $url . "\r\n" .
            "User-Agent: $userAgent\r\n";
@@ -24,8 +24,7 @@ $headers = "Accept-Encoding: gzip, deflate\r\n" .
 $page = LoadPage($url, "GET", $headers);
 
 // Добавляем HTTP заголовки для POST запроса
-$headers .= "X-Requested-With: XMLHttpRequest\r\n" .
-            "Origin: $urlBase\r\n";
+$headers .= ":authority: moonwalk.cc\r\n";
 
 // Поиск дополнительных HTTP заголовков, которые нужно установить
 $data = GetRegexValue($page, "#VideoBalancer\((.*?)\);#is");
@@ -57,11 +56,11 @@ $key5 = GetRegexValue($jsData, '#,e\.j[0-9a-z]+="([^"]+)",#is');
 $key6 = GetRegexValue($jsData, '#,e\.f[0-9a-z]+="([^"]+)",#is');
 $key7 = GetRegexValue($jsData, '#,e\.n[0-9a-z]+="([^"]+)",#is');
 
-$iv  = "79e4add175162a762071a11fe45d249f";
 $key = $key1.$key2.$key3.$key4.$key5.$key6.$key7;
+$iv  = GetRegexValue($jsData, '#,\br="([^"]+)",#i'); // senx 2 smsbox3!
 
 // Шифруем AES cbc PKCS7 Padding
-$crypted = openssl_encrypt($data4Encrypt, 'AES-256-CBC', hex2bin($key), 0, hex2bin($iv));
+$crypted = openssl_encrypt($data4Encrypt, 'aes-256-cbc', hex2bin($key), 0, hex2bin($iv));
 
 // Делаем POST запрос и получаем список ссылок на потоки
 $data = LoadPage($urlBase . "/vs", "POST", $headers, "q=".urlencode($crypted));
