@@ -47,17 +47,10 @@ $postData["f"] = $userAgent;
 
 $data4Encrypt = json_encode($postData, JSON_UNESCAPED_SLASHES);
 
-// Шифруем
-$key1 = GetRegexValue($jsData, '#;e\.a[0-9a-z]+="([^"]+)",#is');
-$key2 = GetRegexValue($jsData, '#,e\.d[0-9a-z]+="([^"]+)",#is');
-$key3 = GetRegexValue($jsData, '#,e\.e[0-9a-z]+="([^"]+)",#is');
-$key4 = GetRegexValue($jsData, '#,e\.t[0-9a-z]+="([^"]+)",#is');
-$key5 = GetRegexValue($jsData, '#,e\.j[0-9a-z]+="([^"]+)",#is');
-$key6 = GetRegexValue($jsData, '#,e\.f[0-9a-z]+="([^"]+)",#is');
-$key7 = GetRegexValue($jsData, '#,e\.n[0-9a-z]+="([^"]+)",#is');
-
-$key = $key1.$key2.$key3.$key4.$key5.$key6.$key7;
-$iv  = GetRegexValue($jsData, '#,\br="([^"]+)",#i'); // senx 2 smsbox3!
+// Получаем данные для шифрования
+preg_match('#;e\.\w+="(\w+)",e\.\w+="(\w+)",e\.\w+="(\w+)",e\.\w+="(\w+)",e\.\w+="(\w+)",e\.\w+="(\w+)",e\.\w+="(\w+)"#', $jsData, $m);
+$key = $m[1].$m[2].$m[3].$m[4].$m[5].$m[6].$m[7];
+$iv  = GetRegexValue($jsData, '#],r="([^"]+)#i');
 
 // Шифруем AES cbc PKCS7 Padding
 $crypted = openssl_encrypt($data4Encrypt, 'aes-256-cbc', hex2bin($key), 0, hex2bin($iv));
