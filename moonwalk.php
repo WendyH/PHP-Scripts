@@ -51,9 +51,10 @@ $data4Encrypt = json_encode($postData, JSON_UNESCAPED_SLASHES);
 $key=''; $iv=''; $k=array();
 if (preg_match('#,r=\["(.*?)\]#', $jsData, $k))
   $k = explode(',', str_replace('"', '', $k[1]));
-if (count($k)>29) {
-  $key = $k[29].$k[3].$k[7].$k[10].$k[12].$k[18].$k[21];
-  $iv  = $k[23];
+preg_match('#o\("0xb"\)\]="(.*?)"#', $jsData, $add);
+if (count($k)>31) {
+  $key = $k[27].$k[31].$k[3].$add[1].$k[10].$k[15].$k[18];
+  $iv  = $k[21];
 } else 
   die("Пора менять регулярку! Не найден key для шифрования.");
 
