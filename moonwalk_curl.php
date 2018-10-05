@@ -49,12 +49,13 @@ foreach ($postData as $name => $value) {
 $data4Encrypt .= "}"; // Закончили формировать json данные для шифрования
 
 preg_match_all('#r=\[(.*?)\];#',$jsData,$keys);
-preg_match('#e\[o\("0xb"\)\]="([^"]+)",#',$jsData,$ks);
+preg_match('#a="([^"]+)",#',$jsData,$ivs);
+preg_match('#e\[o\("0x6"\)\]="([^"]+)",#',$jsData,$ks);
 $k =  explode(',',$keys[1][8]);
-$key = $k[27].$k[31].$k[3].$ks[1].$k[10].$k[15].$k[18];
-$iv = $k[21];
+$iv = $ivs[1];
+$key = $k[25].$k[2].$ks[1].$k[5].$k[8].$k[13].$k[16];
 $key = str_replace('"','',$key);
-$iv = str_replace('"','',$iv);
+//$iv = str_replace('"','',$iv);
 // Шифруем AES cbc PKCS7 Padding
 $crypted = openssl_encrypt($data4Encrypt, 'AES-256-CBC', hex2bin($key), 0, hex2bin($iv));
 // Делаем POST запрос и получаем список ссылок на потоки
