@@ -51,14 +51,11 @@ $data4Encrypt = json_encode($postData, JSON_UNESCAPED_SLASHES);
 $key=''; $iv='';
 if (preg_match('#,r=\["(.*?)\]#', $jsData, $k))
   $k = explode(',', str_replace('"', '', $k[1]));
-preg_match('#0x0"\)]="(.*?)"#', $jsData, $a1);
-preg_match('#e2a9"\]="(.*?)"#', $jsData, $a2);
-preg_match('#0x5"\)]="(.*?)"#', $jsData, $a3);
-preg_match('#0xb"\)]="(.*?)"#', $jsData, $a4);
-preg_match('#0xf"\)]="(.*?)"#', $jsData, $a5);
+preg_match('#"0x6"\)]="(.*?)"#', $jsData, $a1);
+preg_match('#14"\)],a="(.*?)"#', $jsData, $a2);
 try {
-  $key = $a1[1].$a2[1].$a3[1].$k[13].$a4[1].$a5[1].$k[23];
-  $iv  = $k[26];
+  $key = $k[25].$k[2].$a1[1].$k[5].$k[8].$k[13].$k[16];
+  $iv  = $a2[1];
 } catch (Exception $e) {
   die("Пора менять регулярку! Не найден key для шифрования.\n".$e->getMessage());
 }
