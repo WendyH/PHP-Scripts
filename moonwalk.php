@@ -48,17 +48,8 @@ $postData["f"] = $userAgent;
 $data4Encrypt = json_encode($postData, JSON_UNESCAPED_SLASHES);
 
 // Получаем данные для шифрования
-$key=''; $iv='';
-if (preg_match('#,r=\["(.*?)\]#', $jsData, $k))
-  $k = explode(',', str_replace('"', '', $k[1]));
-preg_match('#"0x6"\)]="(.*?)"#', $jsData, $a1);
-preg_match('#14"\)],a="(.*?)"#', $jsData, $a2);
-try {
-  $key = $k[25].$k[2].$a1[1].$k[5].$k[8].$k[13].$k[16];
-  $iv  = $a2[1];
-} catch (Exception $e) {
-  die("Пора менять регулярку! Не найден key для шифрования.\n".$e->getMessage());
-}
+$key = 'ae3539058f0bf09378324b70f9e549e01c7ed59f08e38fa627dcd2f29991d222';
+$iv  = 'f7b4e772e74ccacb1dda2acbb6be38fa';
 
 // Шифруем AES cbc PKCS7 Padding
 $crypted = openssl_encrypt($data4Encrypt, 'aes-256-cbc', hex2bin($key), 0, hex2bin($iv));
