@@ -1,3 +1,0 @@
-<?php
-$iv  = '14661ce716c5ac9d60f1c366c7afd866';
-$key = 'a0a47c3d5a46cf93102598bc2aac2909ce41c3344a74c76af21d4c63e9e0d4e4';
