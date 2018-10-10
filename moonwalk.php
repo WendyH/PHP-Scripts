@@ -28,6 +28,8 @@ $headers .= ":authority: moonwalk.cc\r\n";
 
 // Поиск дополнительных HTTP заголовков, которые нужно установить
 $data = GetRegexValue($page, "#VideoBalancer\((.*?)\);#is");
+if (!$data) $page = LoadPage($url, "GET", $headers);
+$data = GetRegexValue($page, "#VideoBalancer\((.*?)\);#is");
 if (!$data) die("No VideoBalancer info in the loaded iframe.");
 $options = JSDecode($data);
 
