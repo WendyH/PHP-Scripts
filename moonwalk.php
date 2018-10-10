@@ -48,14 +48,24 @@ $postData["f"] = $userAgent;
 $data4Encrypt = json_encode($postData, JSON_UNESCAPED_SLASHES);
 
 // Получаем данные для шифрования
-$key = 'ae3539058f0bf09378324b70f9e549e01c7ed59f08e38fa627dcd2f29991d222';
-$iv  = 'f7b4e772e74ccacb1dda2acbb6be38fa';
+$iv  = "14661ce716c5ac9d60f1c366c7afd866";
+$key = "a0a47c3d5a46cf93102598bc2aac2909ce41c3344a74c76af21d4c63e9e0d4e4";
 
 // Шифруем AES cbc PKCS7 Padding
 $crypted = openssl_encrypt($data4Encrypt, 'aes-256-cbc', hex2bin($key), 0, hex2bin($iv));
 
 // Делаем POST запрос и получаем список ссылок на потоки
 $data = LoadPage($urlBase . "/vs", "POST", $headers, "q=".urlencode($crypted));
+
+if (!$data) {
+  // Данные защиты устарели, пробуем получить новые
+  $ini_text  = file_get_contents("https://github.com/WendyH/PHP-Scripts/raw/master/moon4crack.ini");
+  $moon_vals = parse_ini_string($ini_text);
+  $iv  = $moon_vals['iv' ];
+  $key = $moon_vals['key'];
+  $crypted = openssl_encrypt($data4Encrypt, 'aes-256-cbc', hex2bin($key), 0, hex2bin($iv));
+  $data = LoadPage($urlBase . "/vs", "POST", $headers, "q=".urlencode($crypted));
+}
 
 if ($type=="json") die($data);
 
