@@ -23,13 +23,15 @@ $headers = "Accept-Encoding: gzip, deflate, br\r\n" .
 // Загружаем страницу iframe c moonwalk
 $page = LoadPage($url, "GET", $headers);
 
-// Добавляем HTTP заголовки для POST запроса
-$headers .= ":authority: moonwalk.cc\r\n";
-
 // Поиск дополнительных HTTP заголовков, которые нужно установить
+$data = GetRegexValue($page, "#VideoBalancer\((.*?)\);#is");
+if (!$data) $page = LoadPage($url, "GET", $headers);
 $data = GetRegexValue($page, "#VideoBalancer\((.*?)\);#is");
 if (!$data) die("No VideoBalancer info in the loaded iframe.");
 $options = JSDecode($data);
+
+// Добавляем HTTP заголовки для POST запроса
+$headers .= "Origin: http://moonwalk.cc\r\nX-Requested-With: XMLHttpRequest\r\n";
 
 // Получение ссылки на js-скрипт, где есть список параметров POST запроса
 $jsUrl = GetRegexValue($page, '#src="(.*?)"#');
@@ -48,26 +50,24 @@ $postData["f"] = $userAgent;
 $data4Encrypt = json_encode($postData, JSON_UNESCAPED_SLASHES);
 
 // Получаем данные для шифрования
-$key=''; $iv='';
-if (preg_match('#,r=\["(.*?)\]#', $jsData, $k))
-  $k = explode(',', str_replace('"', '', $k[1]));
-preg_match('#0x0"\)]="(.*?)"#', $jsData, $a1);
-preg_match('#e2a9"\]="(.*?)"#', $jsData, $a2);
-preg_match('#0x5"\)]="(.*?)"#', $jsData, $a3);
-preg_match('#0xb"\)]="(.*?)"#', $jsData, $a4);
-preg_match('#0xf"\)]="(.*?)"#', $jsData, $a5);
-try {
-  $key = $a1[1].$a2[1].$a3[1].$k[13].$a4[1].$a5[1].$k[23];
-  $iv  = $k[26];
-} catch (Exception $e) {
-  die("Пора менять регулярку! Не найден key для шифрования.\n".$e->getMessage());
-}
+$iv  = "14661ce716c5ac9d60f1c366c7afd866";
+$key = "a0a47c3d5a46cf93102598bc2aac2909ce41c3344a74c76af21d4c63e9e0d4e4";
 
 // Шифруем AES cbc PKCS7 Padding
 $crypted = openssl_encrypt($data4Encrypt, 'aes-256-cbc', hex2bin($key), 0, hex2bin($iv));
 
 // Делаем POST запрос и получаем список ссылок на потоки
 $data = LoadPage($urlBase . "/vs", "POST", $headers, "q=".urlencode($crypted));
+
+if (!$data) {
+  // Данные защиты устарели, пробуем получить новые
+  $ini_text  = file_get_contents("https://github.com/WendyH/PHP-Scripts/raw/master/moon4crack.ini");
+  $moon_vals = parse_ini_string($ini_text);
+  $iv  = $moon_vals['iv' ];
+  $key = $moon_vals['key'];
+  $crypted = openssl_encrypt($data4Encrypt, 'aes-256-cbc', hex2bin($key), 0, hex2bin($iv));
+  $data = LoadPage($urlBase . "/vs", "POST", $headers, "q=".urlencode($crypted));
+}
 
 if ($type=="json") die($data);
 
@@ -112,15 +112,17 @@ function LoadPage($url, $method, $headers, $data='') {
                              'header' => $headers,
                              'content'=> $data   );
     $context = stream_context_create($options);
-    $page    = file_get_contents($url, false, $context);
-    // Перебираем HTTP заголовки ответа, чтобы установить кукис
-    foreach($http_response_header as $c => $h) {
-        if (stristr($h, 'content-encoding') and stristr($h, 'gzip')) {
-            $page = gzdecode($page);
-        } else if (preg_match('#^Set-Cookie:\s*([^;]+)#', $h, $matches)) {
-            parse_str($matches[1], $tmp);
-            $cookies += $tmp;
-        }
+    $page    = @file_get_contents($url, false, $context);
+    if ($page) {
+      // Перебираем HTTP заголовки ответа, чтобы установить кукис
+      foreach($http_response_header as $c => $h) {
+          if (stristr($h, 'content-encoding') and stristr($h, 'gzip')) {
+              $page = gzdecode($page);
+          } else if (preg_match('#^Set-Cookie:\s*([^;]+)#', $h, $matches)) {
+              parse_str($matches[1], $tmp);
+              $cookies += $tmp;
+          }
+      }
     }
     return $page;
 }
