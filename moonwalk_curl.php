@@ -11,7 +11,7 @@ if (!$url) die("No moonwalk iframe url in the parameters.");
 $userAgent = "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:59.0) Gecko/20100101 Firefox/59.0";
 // Загружаем страницу iframe c moonwalk
 $page = curl($url);
-preg_match("#VideoBalancer\(([^\)]+)\),([^\)]+)\);#i",$page,$data);
+preg_match("#VideoBalancer\(([^\)]+)\);#i",$page,$data);
 
 if (!$data[0]) die("No VideoBalancer info in the loaded iframe.");
 $Token = GetRegexValue($data[0],"#video_token:\s'([^']+)',#");
@@ -56,7 +56,7 @@ $iv = $ivs[1];
 preg_match('#(\w{32})+#',implode('',$k),$vs);
 $iv = $vs[1];
 }
-$key = "2b039c689ef02dd667e49aa37551d8eb690593a783c4fe4e8e38c1d4d0e15db1";
+$key = "0ae3ddff4e629fc025f75e58bb171347d123724a2e170f26a41639611e39efb1";
 // Шифруем AES cbc PKCS7 Padding
 $crypted = openssl_encrypt($data4Encrypt, 'AES-256-CBC', hex2bin($key), 0, hex2bin($iv));
 // Делаем POST запрос и получаем список ссылок на потоки
