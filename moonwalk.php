@@ -50,8 +50,8 @@ $postData["f"] = $userAgent;
 $data4Encrypt = json_encode($postData, JSON_UNESCAPED_SLASHES);
 
 // Получаем данные для шифрования
-$iv  = "49a3b536382392dc1e6646084ed33702";
-$key = "1cbc77c38628b1fff69bc12fa05fd13607db7a3c1d0d529a6f2f1a647cd567be";
+$iv  = "c08af728718cf10060a061bc8aed8598";
+$key = "56b838554ba77ff698ad2b09e6b9beb311a1484a848f42a0ca1cc1ff21330210";
 
 // Шифруем AES cbc PKCS7 Padding
 $crypted = openssl_encrypt($data4Encrypt, 'aes-256-cbc', hex2bin($key), 0, hex2bin($iv));
