@@ -56,7 +56,7 @@ $iv = $ivs[1];
 preg_match('#(\w{32})+#',implode('',$k),$vs);
 $iv = $vs[1];
 }
-$key = "14117e2239fda50262146d0ed4b98f96670db7a60161949f49abd32d1b1f5a69";
+$key = "c9f93e8ebe7fc883d1bc443e4a2eef42125b063e6b62f55c57a77a1e62acee08";
 // Шифруем AES cbc PKCS7 Padding
 $crypted = openssl_encrypt($data4Encrypt, 'AES-256-CBC', hex2bin($key), 0, hex2bin($iv));
 // Делаем POST запрос и получаем список ссылок на потоки
