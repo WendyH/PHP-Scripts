@@ -32,7 +32,7 @@ if (!$data) $page = LoadPage($url, "GET", $headers);
 $data = GetRegexValue($page, "#VideoBalancer\((.*?)\);#is");
 if (!$data) die("No VideoBalancer info in the loaded iframe.");
 $options = JSDecode($data);
-
+$urlBase = $options["proto"].$options["host"];
 // Получение ссылки на js-скрипт, где есть список параметров POST запроса
 $jsUrl = GetRegexValue($page, '#src="(.*?)"#');
 if (!$jsUrl)  die("Not found js url in the loaded iframe.");
