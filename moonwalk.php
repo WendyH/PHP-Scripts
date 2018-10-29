@@ -57,7 +57,7 @@ $key = "6bf573b54518a5cf0f126b027fb66d5f07fe097abb749be59ddb3bffd028efc7";
 $crypted = openssl_encrypt($data4Encrypt, 'aes-256-cbc', hex2bin($key), 0, hex2bin($iv));
 
 // Делаем POST запрос и получаем список ссылок на потоки
-$data = LoadPage($urlBase . "/vs", "POST", $headers, "q=".urlencode($crypted));
+$data = LoadPage($urlBase . "/vs", "POST", $headers, "q=".urlencode($crypted)."&ref=".$options["ref"]);
 
 if (!$data) {
   // Данные защиты устарели, пробуем получить новые
@@ -66,7 +66,7 @@ if (!$data) {
   $iv  = $moon_vals['iv' ];
   $key = $moon_vals['key'];
   $crypted = openssl_encrypt($data4Encrypt, 'aes-256-cbc', hex2bin($key), 0, hex2bin($iv));
-  $data = LoadPage($urlBase . "/vs", "POST", $headers, "q=".urlencode($crypted));
+  $data = LoadPage($urlBase . "/vs", "POST", $headers, "q=".urlencode($crypted)."&ref=".$options["ref"]);
 }
 
 if ($type=="json") die($data);
