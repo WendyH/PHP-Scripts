@@ -62,6 +62,14 @@ $crypted = openssl_encrypt($data4Encrypt, 'AES-256-CBC', hex2bin($key), 0, hex2b
 // Делаем POST запрос и получаем список ссылок на потоки
 $post = 'q='.urlencode($crypted);
 $data = curl('http://streamguard.cc/vs', $post);
+if (!$data) {
+  // Данные защиты устарели, пробуем получить новые
+  $ini_text  = file_get_contents("https://github.com/WendyH/PHP-Scripts/raw/master/moon4crack.ini");
+  $moon_vals = parse_ini_string($ini_text);
+  $key = $moon_vals['key'];
+  $crypted = openssl_encrypt($data4Encrypt, 'aes-256-cbc', hex2bin($key), 0, hex2bin($iv));
+  $data = curl($urlBase . "/vs", $post);
+}
 // Делаем из полученных json данных ассоциативный массив PHP
 $answerObject = json_decode($data, TRUE);
   if($answerObject["mp4" ]){
