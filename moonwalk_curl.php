@@ -30,8 +30,8 @@ $postData["e"] = $options["video_token"];
 $postData["f"] = $userAgent;
 $data4Encrypt = json_encode($postData, JSON_UNESCAPED_SLASHES);
 // Получаем данные для шифрования
-$iv  = "8080db898e19d747d7c98fc3cf077c7c";
-$key = "2d496aab797673bef37b8d6c0d0d2a8a72ba41abb60d613b244c013e707a6e2e";
+$iv  = "6808aea30dce00108997852626ceac80";
+$key = "25eba5a69ef30dde66693b9830dbc135f42074a6ff46ce5d4ecf459a2f3bccc7";
 // Шифруем AES cbc PKCS7 Padding
 $crypted = openssl_encrypt($data4Encrypt, 'aes-256-cbc', hex2bin($key), 0, hex2bin($iv));
 // Делаем POST запрос и получаем список ссылок на потоки
