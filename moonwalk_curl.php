@@ -29,9 +29,35 @@ $postData["c"] = false;
 $postData["e"] = $options["video_token"];
 $postData["f"] = $userAgent;
 $data4Encrypt = json_encode($postData, JSON_UNESCAPED_SLASHES);
-// Получаем данные для шифрования
-$iv  = "918acd85c0020c1d8782369319bf6b47";
-$key = "35018ddfd7500151e47ef4c6b159d4d33a95eab06cfc9d4ce734196b6ae524cc";
+
+// Вычисление значений iv и key
+$jsFunc = GetRegexValue($jsData, '/getVideoManifests:function(.*?)ajax/');
+$stringsText  = GetRegexValue($jsFunc, '/,r=\[(".*?")\]/');
+$stringsArray = explode(',', str_replace('"', '', $stringsText));
+$shiftCount   = (int)GetRegexValue($jsFunc, '/}\(r,(\d+)\)/');
+while ($shiftCount > 0) {
+  array_push($stringsArray, array_shift($stringsArray));
+  $shiftCount--;
+}
+$valuesText  = GetRegexValue($jsFunc, '/(e\[.*?);var\s.=/');
+$valuesArray = explode(',', $valuesText);
+$e = array();
+for ($i=0; $i<count($valuesArray); $i++) {
+  $valuesArray[$i] = EvalValuesInString($valuesArray[$i], $stringsArray, $e);
+}
+
+$a = GetRegexValue($jsFunc, '/[;,\s]a=(.*?)[;,{}]/');
+$iv = EvalValuesInString($a, $stringsArray, $e);
+
+$s = GetRegexValue($jsFunc, '/[;,\s]s=(.*?)[;,{}]/');
+$key = EvalValuesInString($s, $stringsArray, $e);
+
+// Если вычислить не удалось, используем указанные вручную
+if ((strlen($iv)!=32) || (strlen($key)!=64)) {
+  $iv  = "918acd85c0020c1d8782369319bf6b47";
+  $key = "35018ddfd7500151e47ef4c6b159d4d33a95eab06cfc9d4ce734196b6ae524cc";
+}
+
 // Шифруем AES cbc PKCS7 Padding
 $crypted = openssl_encrypt($data4Encrypt, 'aes-256-cbc', hex2bin($key), 0, hex2bin($iv));
 // Делаем POST запрос и получаем список ссылок на потоки
