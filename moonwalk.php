@@ -129,11 +129,11 @@ echo $data;
 ///////////////////////////////////////////////////////////////////////////////
 // Преобразование значений в строке c использованием переданного массива
 function EvalValuesInString($line, $stringsArray, &$e) {
-  $line = preg_replace_callback('/\w\("?(0x.*?)"?\)/', function ($m) use ($stringsArray) { return '"'.$stringsArray[hexdec($m[1])].'"'; }, $line);
+  $line = preg_replace_callback('/\w\("*(0x.*?)"*\)/', function ($m) use ($stringsArray) { return '"'.$stringsArray[hexdec($m[1])].'"'; }, $line);
   $line = preg_replace_callback('/\w\.(\w+)/'        , function ($m) use ($stringsArray) { return 'e["'.$m[1].'"]'; }, $line);
-  $line = preg_replace_callback('/\w\["?(\w+)"?\]/'  , function ($m) use ($e) { return isset($e[$m[1]]) ? $e[$m[1]] : $m[0]; }, $line);
+  $line = preg_replace_callback('/\w\["*(\w+)"*\]/'  , function ($m) use ($e) { return isset($e[$m[1]]) ? $e[$m[1]] : $m[0]; }, $line);
   $line = preg_replace_callback('/\w\[(\w+)\]/'      , function ($m) use ($e) { return isset($e[$m[1]]) ? $e[$m[1]] : $m[0]; }, $line);
-  if (preg_match('/\w[\[\.]"?(\w+)"?\]=(.*)/', $line, $m))
+  if (preg_match('/\w[\[\.]"*(\w+)"*\]=(.*)/', $line, $m))
     $e[$m[1]] = str_replace('"', '', $m[2]);
     $line = str_replace(['+', '"'], '', $line);
   return $line;
