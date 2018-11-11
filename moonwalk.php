@@ -50,25 +50,30 @@ $postData["f"] = $userAgent;
 $data4Encrypt = json_encode($postData, JSON_UNESCAPED_SLASHES);
 
 // Вычисление значений iv и key
-$jsFunc = GetRegexValue($jsData, '/getVideoManifests:function(.*?)ajax/');
-$stringsText  = GetRegexValue($jsFunc, '/,r=\[(".*?")\]/');
-$stringsArray = explode(',', str_replace('"', '', $stringsText));
-$shiftCount   = (int)GetRegexValue($jsFunc, '/}\(r,(\d+)\)/');
+$jsFunc       = GetRegexValue($jsData, '/getVideoManifests:function(.*?)ajax/'); // Получаем текст функции getVideoManifests
+$stringsText  = GetRegexValue($jsFunc, '/,.=\[("\w+","\w+".*?")\]/');
+$stringsArray = explode('","', $stringsText);
+$shiftCount   = (int)GetRegexValue($jsFunc, '/}\(.,(\d+)\)/');
 while ($shiftCount > 0) {
   array_push($stringsArray, array_shift($stringsArray));
   $shiftCount--;
 }
-$valuesText  = GetRegexValue($jsFunc, '/(e\[.*?);var\s.=/');
+$valuesText  = GetRegexValue($jsFunc, '/(\w\[[^}{;,]+=.*?);/');
 $valuesArray = explode(',', $valuesText);
-$e = array();
+$e = array(); // Массив для хранения вычисленных значений
 for ($i=0; $i<count($valuesArray); $i++) {
   $valuesArray[$i] = EvalValuesInString($valuesArray[$i], $stringsArray, $e);
 }
 
-$a = GetRegexValue($jsFunc, '/[;,\s]a=(.*?)[;,{}]/');
+// Получаем имена переменных key и iv
+if (!preg_match('|CryptoJS.*?,.*?\((\w+)\),.*?iv:.*?\((\w+)\)|', $jsFunc, $matches)) die("Not found variable names for key and iv.");
+$var_name_key = $matches[1];
+$var_name_iv  = $matches[2];
+
+$a = GetRegexValue($jsFunc, "/[;,\s]$var_name_iv=(.*?)[;,{}]/");
 $iv = EvalValuesInString($a, $stringsArray, $e);
 
-$s = GetRegexValue($jsFunc, '/[;,\s]s=(.*?)[;,{}]/');
+$s = GetRegexValue($jsFunc, "/[;,\s]$var_name_key=(.*?)[;,{}]/");
 $key = EvalValuesInString($s, $stringsArray, $e);
 
 // Если вычислить не удалось, используем указанные вручную
