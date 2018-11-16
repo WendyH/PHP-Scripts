@@ -60,8 +60,8 @@ $key = EvalValuesInString($s, $stringsArray, $e);
 
 // Если вычислить не удалось, используем указанные вручную
 if ((strlen($iv)!=32) || (strlen($key)!=64)) {
-  $iv  = "6e34976a79c3ca5d69a33f90372fe2b1";
-  $key = "cf3251cea48437964fe663ded075aea92520a5e89b7c02ff45833fa27e810b2a";
+  $iv  = "ff94c5b7746207180661cefc9bb80867";
+  $key = "5646320aba8dac807144cc8b4a61322653c23d4e652d87796219f9a20b4e097e";
 }
 
 // Шифруем AES cbc PKCS7 Padding
