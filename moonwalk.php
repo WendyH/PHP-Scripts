@@ -50,31 +50,43 @@ $postData["f"] = $userAgent;
 $data4Encrypt = json_encode($postData, JSON_UNESCAPED_SLASHES);
 
 // Вычисление значений iv и key
-$jsFunc       = GetRegexValue($jsData, '/getVideoManifests:function(.*?)ajax/'); // Получаем текст функции getVideoManifests
-$stringsText  = GetRegexValue($jsFunc, '/,.=\[("\w+","\w+".*?")\]/');
+$jsFunc = GetRegexValue($jsData, '/{\w:this.options.partner_id(.*?)ajax/'); // Получаем текст функции getVideoManifests
+$stringsText  = GetRegexValue($jsFunc, '/,.=\[("[\w=]+","[\w=]+".*?")\]/');
 $stringsArray = explode('","', $stringsText);
+for ($i=0; $i < count($stringsArray); $i++)
+  $stringsArray[$i] = base64_decode($stringsArray[$i]);
 $shiftCount   = (int)GetRegexValue($jsFunc, '/}\(.,(\d+)\)/');
 while ($shiftCount > 0) {
   array_push($stringsArray, array_shift($stringsArray));
   $shiftCount--;
 }
-$valuesText  = GetRegexValue($jsFunc, '/(\w\[[^}{;,]+=.*?);/');
+$valuesText  = GetRegexValue($jsFunc, '/;(\w\[[^}{;,]+=.*?);/'); 
 $valuesArray = explode(',', $valuesText);
-$e = array(); // Массив для хранения вычисленных значений
-for ($i=0; $i<count($valuesArray); $i++) {
+$e = array();
+for ($i=0; $i<count($valuesArray); $i++)
   $valuesArray[$i] = EvalValuesInString($valuesArray[$i], $stringsArray, $e);
-}
-
-// Получаем имена переменных key и iv
-if (!preg_match('|CryptoJS.*?,.*?\((\w+)\),.*?iv:.*?\((\w+)\)|', $jsFunc, $matches)) die("Not found variable names for key and iv.");
-$var_name_key = $matches[1];
-$var_name_iv  = $matches[2];
-
-$a = GetRegexValue($jsFunc, "/[;,\s]$var_name_iv=(.*?)[;,{}]/");
-$iv = EvalValuesInString($a, $stringsArray, $e);
-
-$s = GetRegexValue($jsFunc, "/[;,\s]$var_name_key=(.*?)[;,{}]/");
-$key = EvalValuesInString($s, $stringsArray, $e);
+if (preg_match('|CryptoJS.*?,.*?\((\w+)\),.*?iv:.*?\((\w+)\)|', $jsFunc, $matches)) {
+  $var_name_key = $matches[1];
+  $var_name_iv  = $matches[2];
+  $stringsText  = GetRegexValue($jsFunc, '/var\s.=\[("[\w=]+","[\w=]+".*?")\]/');
+  $stringsArray = explode('","', $stringsText);
+  for ($i=0; $i < count($stringsArray); $i++)
+    $stringsArray[$i] = base64_decode($stringsArray[$i]);
+  $a = GetRegexValue($jsFunc, "/[;,\s]$var_name_iv=(.*?)[;,{}]/"); // текст присвоения значения
+  if ($a) {
+    $ptrn = str_replace(['[',']','(',')'], ['\[','\]','\(','\)'], $a);
+    if (preg_match("|$ptrn=(.*?)[;,}{]|", $jsFunc, $m))
+      $a = $m[1];
+  }
+  $iv = EvalValuesInString($a, $stringsArray, $e);
+  $s = GetRegexValue($jsFunc, "/[;,\s]$var_name_key=(.*?)[;,{}]/");
+  if ($s) {
+    $ptrn = str_replace(['[',']','(',')'], ['\[','\]','\(','\)'], $s);
+    if (preg_match("|$ptrn=(.*?)[;,}{]|", $jsFunc, $m))
+      $s = $m[1];
+  }
+  $key = EvalValuesInString($s, $stringsArray, $e);
+} else { $key=""; $iv=""; }
 
 // Если вычислить не удалось, используем указанные вручную
 if ((strlen($iv)!=32) || (strlen($key)!=64)) {
