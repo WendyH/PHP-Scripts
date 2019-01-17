@@ -67,12 +67,12 @@ if (preg_match('|CryptoJS.*?,.*?\((\w+)\),.*?iv:.*?\((\w+)\)|', $jsFunc, $matche
       $s = $m[1];
   }
   $key = EvalValuesInString($s, $stringsArray, $e);
-} else { $key = "a6e53997804bed235f768bd06273c59f9102dc5972e3db17e60d0c6f4ad1c287"; $iv  = "337a758049f59259ae5583be1521adea"; }
+} else { $key = "5f8b7028e72d8fb91d8d525d5cfbba09beeb0ca1645846970ef61a90323bb4d9"; $iv  = "7c961120f3731857023b535c9a7a0c68"; }
 
 // Если вычислить не удалось, используем указанные вручную
 if ((strlen($iv)!=32) || (strlen($key)!=64)) {
-  $iv  = "337a758049f59259ae5583be1521adea";
-  $key = "a6e53997804bed235f768bd06273c59f9102dc5972e3db17e60d0c6f4ad1c287";
+  $iv  = "7c961120f3731857023b535c9a7a0c68";
+  $key = "5f8b7028e72d8fb91d8d525d5cfbba09beeb0ca1645846970ef61a90323bb4d9";
 }
 
 // Шифруем AES cbc PKCS7 Padding
