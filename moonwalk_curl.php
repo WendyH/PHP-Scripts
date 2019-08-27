@@ -11,7 +11,7 @@ if (!$url) die("No moonwalk iframe url in the parameters.");
 $userAgent = "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:59.0) Gecko/20100101 Firefox/59.0";
 // Загружаем страницу iframe c moonwalk
 $page = curl($url);
-$data = GetRegexValue($page, "#VideoBalancer\((.*?)\);#is");
+$data = GetRegexValue($page, "#video_balancer_options\s=\s(\{.*?\});#is");
 if (!$data) die("No VideoBalancer info in the loaded iframe.");
 $options = JSDecode($data);
 $urlBase = $options["proto"].$options["host"];
@@ -26,6 +26,7 @@ $postData = array();
 $postData["a"] = (int)$options["partner_id"];
 $postData["b"] = (int)$options["domain_id"];
 $postData["c"] = false;
+$postData["d"] = $options["player_skin"];
 $postData["e"] = $options["video_token"];
 $postData["f"] = $userAgent;
 $data4Encrypt = json_encode($postData, JSON_UNESCAPED_SLASHES);
