@@ -1,5 +1,6 @@
 <?php
-ini_set("log_errors", 1); ini_set("error_log", $_SERVER['SCRIPT_FILENAME'].".log"); ini_set('error_reporting', E_ALL); ini_set("display_errors", 1);
+ini_set("log_errors", 1); ini_set("error_log", $_SERVER['SCRIPT_FILENAME'].".log"); 
+ini_set('error_reporting', E_ALL); ini_set("display_errors", 1);
 $urlBase = "http://moonwalk.cc";
 
 // Получение ссылки на видео c moonwalk в переданных параметрах, а также тип получаемого потока.
@@ -27,9 +28,9 @@ $page = LoadPage($url, "GET", $headers);
 $headers .= ":authority: moonwalk.cc\r\n";
 
 // Поиск дополнительных HTTP заголовков, которые нужно установить
-$data = GetRegexValue($page, "#VideoBalancer\((.*?)\);#is");
+$data = GetRegexValue($page, "#video_balancer_options\s=\s(\{.*?\});#is");
 if (!$data) $page = LoadPage($url, "GET", $headers);
-$data = GetRegexValue($page, "#VideoBalancer\((.*?)\);#is");
+$data = GetRegexValue($page, "#video_balancer_options\s=\s(\{.*?\});#is");
 if (!$data) die("No VideoBalancer info in the loaded iframe.");
 $options = JSDecode($data);
 $urlBase = $options["proto"].$options["host"];
@@ -44,6 +45,7 @@ $postData = array();
 $postData["a"] = (int)$options["partner_id"];
 $postData["b"] = (int)$options["domain_id"];
 $postData["c"] = false;
+$postData["d"] = $options["player_skin"];
 $postData["e"] = $options["video_token"];
 $postData["f"] = $userAgent;
 
