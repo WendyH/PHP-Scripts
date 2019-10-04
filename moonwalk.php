@@ -37,9 +37,10 @@ $urlBase = $options["proto"].$options["host"];
 // Получение ссылки на js-скрипт, где есть список параметров POST запроса
 $jsUrl = GetRegexValue($page, '#src="(.*?)"#');
 if (!$jsUrl)  die("Not found js url in the loaded iframe.");
-
-$jsData = LoadPage($urlBase . $jsUrl, "GET", $headers);
-
+if(preg_match('|^http|',$jsUrl)) $jsData = LoadPage($jsUrl, "GET", $headers);
+else { 
+       $jsData = LoadPage($urlBase . $jsUrl, "GET", $headers);
+     }
 // Формируем параметры для POST запроса
 $postData = array();
 $postData["a"] = "4787";
