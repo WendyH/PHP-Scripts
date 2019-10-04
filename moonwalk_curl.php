@@ -26,8 +26,8 @@ else {
 
 // Формируем параметры для POST запроса
 $postData = array();
-$postData["a"] = (int)$options["partner_id"];
-$postData["b"] = (int)$options["domain_id"];
+$postData["a"] = "4787";
+$postData["b"] = "22245";
 $postData["c"] = false;
 $postData["d"] = $options["player_skin"];
 $postData["e"] = $options["video_token"];
